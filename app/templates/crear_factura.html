@@ -1,0 +1,19 @@
+{% extends 'admin/master.html' %}
+
+{% block body %}
+<div class="container-fluid">
+    <div class="page-header"><h2>Nueva factura</h2></div>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}<div class="alert alert-danger">{{ message }}</div>{% endfor %}
+    {% endwith %}
+    <form method="post" enctype="multipart/form-data" class="form-horizontal">
+        {% include '_formulario_factura.html' %}
+        <div class="form-group">
+            <div class="col-sm-offset-2 col-sm-10">
+                <button class="btn btn-success" id="guardar-factura" type="submit">Guardar factura</button>
+                <a class="btn btn-default" href="{{ url_for('facturas.index') }}">Cancelar</a>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

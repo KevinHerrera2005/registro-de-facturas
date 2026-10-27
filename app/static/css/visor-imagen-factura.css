@@ -1,0 +1,98 @@
+.visor-imagen-factura {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+.visor-imagen-factura.activo {
+    display: flex;
+}
+.visor-imagen-factura-cerrar {
+    position: absolute;
+    top: 15px;
+    right: 25px;
+    color: #fff;
+    font-size: 36px;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 2001;
+}
+#visor-imagen-factura-img {
+    max-width: 90%;
+    max-height: 90%;
+    cursor: zoom-in;
+    transition: transform 0.15s ease-out;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+/* Galería de imágenes en el listado de facturas: 2 por fila, la siguiente pasa a la fila de abajo. */
+.factura-imagenes-lista {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 4px;
+    width: 100px;
+}
+
+.factura-imagenes-lista__miniatura {
+    width: 100%;
+    height: 35px;
+    object-fit: cover;
+    cursor: zoom-in;
+    border-radius: 2px;
+}
+
+/* Imágenes ya guardadas, mostradas arriba del selector de archivos al editar una factura. */
+.factura-imagenes-actuales {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.factura-imagenes-actuales__item {
+    position: relative;
+}
+
+.factura-imagenes-actuales__miniatura {
+    width: 90px;
+    height: 90px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid #555;
+    cursor: zoom-in;
+    display: block;
+}
+
+/* Botón "×" superpuesto en la esquina de cada miniatura para quitar esa imagen de la factura. */
+.factura-imagenes-actuales__quitar {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 20px;
+    height: 20px;
+    line-height: 18px;
+    padding: 0;
+    border-radius: 50%;
+    border: 1px solid #555;
+    background-color: #d9534f;
+    color: #ffffff;
+    font-size: 14px;
+    text-align: center;
+    cursor: pointer;
+}
+
+.factura-imagenes-actuales__quitar:hover {
+    background-color: #c9302c;
+}
+
+.factura-imagenes-nuevas__input {
+    margin-top: 10px;
+}

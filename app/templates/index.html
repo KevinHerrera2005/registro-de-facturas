@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="{{url_for('static',filename='css/index.css')}}">
+</head>
+<body>
+    <h1>HOLa {{data.nombre}}</h1>
+    <ul>
+    {%for i in data.cursos%}
+    <li>{{i}}</li>
+    {%endfor%}
+    </ul>
+</body>
+</html>

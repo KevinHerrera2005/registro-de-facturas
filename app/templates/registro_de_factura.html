@@ -1,0 +1,142 @@
+{% extends 'admin/master.html' %}
+{% import 'admin/lib.html' as lib with context %}
+
+{% block body %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="page-header">
+                <h2>Facturas</h2>
+            </div>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }}">{{ message }}</div>
+                {% endfor %}
+            {% endwith %}
+            <form class="factura-filtros" method="get" action="{{ url_for('facturas.index') }}">
+                <div class="factura-filtros__barra">
+                    <div class="form-group">
+                        <label class="sr-only" for="q">Buscar factura</label>
+                        <input class="form-control" id="q" name="q" value="{{ search }}" placeholder="Número de factura, sucursal, proyecto o total">
+                    </div>
+                    <button class="btn btn-primary" type="submit">Buscar</button>
+                    <a class="btn btn-default" href="{{ url_for('facturas.index', limpiar_filtros=1) }}">Limpiar</a>
+                    <a class="btn btn-success pull-right" href="{{ url_for('facturas.crear') }}">Nueva factura</a>
+                </div>
+
+                <div class="panel panel-default factura-filtros__panel">
+                    <div class="panel-heading"><h4 class="panel-title">Filtrar por</h4></div>
+                    <div class="panel-body">
+                        <div class="factura-filtros__grid">
+                            <div class="factura-filtros__producto azul">
+                                <label class="azul">Producto</label>
+                                <div id="filtro-productos"></div>
+                                <script type="application/json" id="datos-filtro-productos">{{ {'productos': productos_filtro, 'seleccionados': productos_seleccionados} | tojson }}</script>
+                                <div class="factura-filtros__tipo">
+                                    <label for="filtro-tipo" class="morado">Tipo:</label>
+                                    <input class="form-control" id="filtro-tipo" name="tipo" value="{{ tipo }}" placeholder="Descripción del producto">
+                                </div>
+                            </div>
+                            <div class="factura-filtros__fecha">
+                                <label>Fecha</label>
+                                <div class="factura-filtros__fecha-row">
+                                    <span>De:</span>
+                                    <input class="form-control" type="datetime-local" name="fecha_desde" value="{{ fecha_desde }}">
+                                    <span>Hasta:</span>
+                                    <input class="form-control" type="datetime-local" name="fecha_hasta" value="{{ fecha_hasta }}">
+                                </div>
+                            </div>
+                            <div class="factura-filtros__proyecto">
+                                <label for="filtro-proyecto">Proyecto</label>
+                                <select class="form-control" id="filtro-proyecto" name="proyecto">
+                                    <option value="">Todos los proyectos</option>
+                                    {% for item in proyectos_filtro %}
+                                    <option value="{{ item.id_proyecto }}" {% if item.id_proyecto == proyecto_seleccionado %}selected{% endif %}>{{ item.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <button class="btn btn-info" type="submit">Filtrar</button>
+                        <button class="btn btn-default" type="button" id="limpiar-productos">Limpiar</button>
+
+                        <div class="factura-filtros__calcular">
+                            <h4>Calcular total</h4>
+                            <label>Producto</label>
+                            <div id="calcular-productos"></div>
+                            <script type="application/json" id="datos-calcular-productos">{{ {'productos': productos_calcular, 'seleccionados': calc_productos_seleccionados} | tojson }}</script>
+                            <div id="calcular-desglose"></div>
+                            <label for="calcular-total-input">Total</label>
+                            <input class="form-control" id="calcular-total-input" type="text" readonly placeholder="Total">
+                            <div class="factura-filtros__calcular-botones">
+                                <button class="btn btn-info" type="button" id="calcular-total-boton">Calcular</button>
+                                <button class="btn btn-default" type="button" id="calcular-total-limpiar">Limpiar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Número</th>
+                            <th>Fecha</th>
+                            <th>Total</th>
+                            <th>Fletes</th>
+                            <th>Imagen</th>
+                            <th>Sucursal</th>
+                            <th>Proyecto</th>
+                            <th>Productos</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for factura in facturas %}
+                        <tr>
+                            <td>{{ factura.numero_de_factura }}</td>
+                            <td>{{ factura.fecha.strftime('%d/%m/%Y %I:%M %p') if factura.fecha else '' }}</td>
+                            <td>{{ '%.2f'|format(factura.precio_total or 0) }}</td>
+                            <td>{{ '%.2f'|format(factura.fletes or 0) }}</td>
+                            <td>
+                                {% if factura.imagenes %}
+                                <div class="factura-imagenes-lista">
+                                    {% for img in factura.imagenes %}
+                                    <img src="{{ url_for('static', filename='facturas/' ~ img.nombre_archivo) }}" alt="Factura {{ factura.numero_de_factura }} - imagen {{ loop.index }}" class="factura-imagenes-lista__miniatura" onclick="abrirImagenFactura(this.src)">
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td>{{ factura.sucursal.nombre if factura.sucursal else '' }}</td>
+                            <td>{{ factura.proyectos.nombre if factura.proyectos else '' }}</td>
+                            <td>{% for detalle in factura.detalles %}{% set descripcion = (detalle.descripcion or '').strip() %}<span class="factura-productos__item" data-producto-id="{{ detalle.id_producto }}"><span class="factura-productos__nombre">{{ detalle.producto.nombre }}</span>{% if descripcion %}<span class="factura-productos__descripcion">-<span class="factura-productos__descripcion-texto">{{ descripcion }}</span></span>{% endif %}</span>{% if not loop.last %}, {% endif %}{% endfor %}</td>
+                            <td>
+                                <a class="btn btn-xs btn-primary" href="{{ url_for('facturas.editar', factura_id=factura.id_factura) }}">Editar</a>
+                                {% if factura.imagenes %}
+                                <a class="btn btn-xs btn-success" href="{{ url_for('facturas.descargar', factura_id=factura.id_factura) }}">Descargar factura</a>
+                                {% endif %}
+                                <form method="post" action="{{ url_for('facturas.eliminar', factura_id=factura.id_factura) }}" style="display: inline;" onsubmit="return confirm('¿Eliminar esta factura?');">
+                                    <button class="btn btn-xs btn-danger" type="submit">Eliminar</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="9" class="text-center">No hay facturas registradas.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {{ lib.pager(page, num_pages, pager_url) }}
+        </div>
+    </div>
+</div>
+
+<div id="visor-imagen-factura" class="visor-imagen-factura" onclick="cerrarImagenFactura(event)">
+    <span class="visor-imagen-factura-cerrar" onclick="cerrarImagenFactura(event)">&times;</span>
+    <img id="visor-imagen-factura-img" src="" alt="Factura ampliada" draggable="false">
+</div>
+
+<link href="{{ url_for('static', filename='css/visor-imagen-factura.css') }}" rel="stylesheet">
+<link href="{{ url_for('static', filename='css/facturas-filtro.css', v='4') }}" rel="stylesheet">
+<script src="{{ url_for('static', filename='js/visor-imagen-factura.js') }}"></script>
+<script src="{{ url_for('static', filename='js/facturas-filtro.js', v='8') }}" data-calcular-url="{{ url_for('facturas.calcular_total') }}"></script>
+{% endblock %}

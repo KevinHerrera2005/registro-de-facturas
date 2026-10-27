@@ -1,0 +1,34 @@
+.modal-aviso {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 2200;
+    align-items: center;
+    justify-content: center;
+}
+.modal-aviso.activo {
+    display: flex;
+}
+.modal-aviso-caja {
+    background: var(--bs-body-bg, #22252c);
+    color: inherit;
+    border-radius: 4px;
+    padding: 20px;
+    width: 90%;
+    max-width: 420px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+.modal-aviso-mensaje {
+    margin: 10px 0 20px;
+    font-size: 16px;
+}
+.modal-aviso-detalle {
+    margin: 0 0 15px;
+    font-size: 13px;
+    opacity: 0.75;
+}

@@ -1,0 +1,156 @@
+<div class="form-group">
+    <label class="col-sm-2 control-label" for="imagen">Imagen</label>
+    <div class="col-sm-10">
+        {% if factura is defined and factura.imagenes %}
+        <div class="factura-imagenes-actuales">
+            {% for img in factura.imagenes %}
+            <div class="factura-imagenes-actuales__item" data-imagen-id="{{ img.id_imagen }}">
+                <img src="{{ url_for('static', filename='facturas/' ~ img.nombre_archivo) }}" alt="Imagen {{ loop.index }} de la factura" class="factura-imagenes-actuales__miniatura" onclick="abrirImagenFactura(this.src)">
+                <button type="button" class="factura-imagenes-actuales__quitar" title="Quitar esta imagen">&times;</button>
+            </div>
+            {% endfor %}
+            
+        </div>
+        <p class="help-block">Las imágenes que subas abajo se agregan a las de arriba (no las reemplazan).</p>
+        {% endif %}
+        <div id="imagenes-eliminadas"></div>
+        <div id="imagenes-nuevas" data-editando="{{ '1' if factura is defined else '0' }}">
+            <input class="form-control" id="imagen" name="imagenes" type="file" accept="image/*">
+        </div>
+        <p id="estado-ocr" class="help-block" style="display: none;"></p>
+    </div>
+</div>
+<div class="form-group">
+    
+    <label class="col-sm-2 control-label" for="numero_de_factura">Número de factura</label>
+    <div class="col-sm-10">
+        <input class="form-control" id="numero_de_factura" name="numero_de_factura" required value="{{ factura.numero_de_factura if factura is defined else '' }}" data-factura-id="{{ factura.id_factura if factura is defined else '' }}">
+        <p class="text-danger" id="error-numero-de-factura" role="alert" hidden></p>
+    </div>
+</div>
+<div class="form-group">
+    <label class="col-sm-2 control-label" for="fecha">Fecha</label>
+    <div class="col-sm-6">
+        <input class="form-control" id="fecha" name="fecha" type="date" value="{{ factura.fecha.strftime('%Y-%m-%d') if factura is defined and factura.fecha else '' }}">
+    </div>
+    <div class="col-sm-4">
+        <input class="form-control" id="hora" name="hora" type="time" value="{{ factura.fecha.strftime('%H:%M') if factura is defined and factura.fecha else '' }}">
+        <p class="help-block">Hora (opcional)</p>
+    </div>
+</div>
+
+<div class="form-group">
+    <label class="col-sm-2 control-label" for="precio_total">Precio total</label>
+    <div class="col-sm-10"><input class="form-control" id="precio_total" name="precio_total" type="number" step="0.0001" min="0" value="{{ factura.precio_total if factura is defined else 0 }}"></div>
+</div>
+<div class="form-group">
+    <label class="col-sm-2 control-label" for="fletes">Fletes</label>
+    <div class="col-sm-10"><input class="form-control" id="fletes" name="fletes" type="number" step="0.01" min="0" value="{{ factura.fletes if factura is defined and factura.fletes is not none else 0 }}"></div>
+</div>
+<div class="form-group">
+    <label class="col-sm-2 control-label" for="descuento">Descuento</label>
+    <div class="col-sm-10"><input class="form-control" id="descuento" name="descuento" type="number" min="0" value="{{ factura.descuento if factura is defined and factura.descuento is not none else 0 }}"></div>
+</div>
+<div class="form-group">
+    <label class="col-sm-2 control-label" for="total_letras">Total en letras</label>
+    <div class="col-sm-10"><input class="form-control" id="total_letras" name="total_letras" ></div>
+</div>
+
+{% set selected_sucursal = factura.id_sucursal if factura is defined else none %}
+{% set selected_proyecto = factura.id_proyecto if factura is defined else none %}
+{% set selected_metodo = factura.id_metodo_pago if factura is defined else none %}
+{% set selected_tipo = factura.id_tipo_factura if factura is defined else none %}
+{% set selected_moneda = factura.id_moneda if factura is defined else none %}
+<div class="form-group">
+    <label class="col-sm-2 control-label" for="id_sucursal">Sucursal</label>
+    <div class="col-sm-10">
+        <select class="form-control" id="id_sucursal" name="id_sucursal"><option value="">Seleccione una sucursal</option>{% for item in sucursales %}<option value="{{ item.id_sucursal }}" data-ubicacion="{{ item.ubicacion or '' }}" {% if item.id_sucursal == selected_sucursal %}selected{% endif %}>{{ item.nombre }}</option>{% endfor %}</select>
+        <button type="button" class="btn-ver-ubicacion" id="ver-ubicacion-boton"><span class="btn-ver-ubicacion__flecha">›</span> Ver ubicación</button>
+        <p class="help-block" id="ver-ubicacion-texto" hidden></p>
+    </div>
+</div>
+<div class="form-group">
+    <label class="col-sm-2 control-label" for="id_proyecto">Proyecto</label>
+    <div class="col-sm-10">
+        <select class="form-control" id="id_proyecto" name="id_proyecto"><option value="">Seleccione un proyecto</option>{% for item in proyectos %}<option value="{{ item.id_proyecto }}" data-ubicacion="{{ item.ubicacion or '' }}" {% if item.id_proyecto == selected_proyecto %}selected{% endif %}>{{ item.nombre }}</option>{% endfor %}</select>
+        <button type="button" class="btn-ver-ubicacion" id="ver-ubicacion-proyecto-boton"><span class="btn-ver-ubicacion__flecha">›</span> Ver ubicación</button>
+        <p class="help-block" id="ver-ubicacion-proyecto-texto" hidden></p>
+    </div>
+</div>
+<div class="form-group">
+    <label class="col-sm-2 control-label" for="id_metodo_pago">Método de pago</label>
+    <div class="col-sm-10"><select class="form-control" id="id_metodo_pago" name="id_metodo_pago"><option value="">Seleccione un método</option>{% for item in metodos_pago %}<option value="{{ item.id_metodo_pago }}" {% if item.id_metodo_pago == selected_metodo %}selected{% endif %}>{{ item.nombre }}</option>{% endfor %}</select></div>
+</div>
+<div class="form-group">
+    <label class="col-sm-2 control-label" for="id_tipo_factura">Tipo de factura</label>
+    <div class="col-sm-10"><select class="form-control" id="id_tipo_factura" name="id_tipo_factura"><option value="">Seleccione un tipo</option>{% for item in tipos_factura %}<option value="{{ item.id_tipo_factura }}" {% if item.id_tipo_factura == selected_tipo %}selected{% endif %}>{{ item.nombre }}</option>{% endfor %}</select></div>
+</div>
+<div class="form-group">
+    <label class="col-sm-2 control-label" for="id_moneda">Moneda</label>
+    <div class="col-sm-10"><select class="form-control" id="id_moneda" name="id_moneda"><option value="">Seleccione una moneda</option>{% for item in monedas %}<option value="{{ item.id_moneda }}" {% if item.id_moneda == selected_moneda %}selected{% endif %}>{{ item.nombre }}</option>{% endfor %}</select></div>
+</div>
+<div class="form-group">
+    <label class="col-sm-2 control-label" for="producto">Productos</label>
+    <div class="col-sm-10">
+        <select class="form-control" id="producto"><option value="">Seleccione un producto</option>{% for item in productos %}<option value="{{ item.id_producto }}">{{ item.nombre }}</option>{% endfor %}</select>
+        <div id="detalle-producto" style="display: none; margin-top: 10px;">
+            <div class="row">
+                <div class="col-sm-3"><label for="cantidad">Cantidad</label><input class="form-control" id="cantidad" type="number" step="any" min="0" value="0"></div>
+                <div class="col-sm-3"><label for="precio_unitario">Precio unitario</label><input class="form-control" id="precio_unitario" type="number" step="any" min="0" value="0"></div>
+                <div class="col-sm-3"><label for="unidad">Unidad</label><select class="form-control" id="unidad"><option value="">Seleccione unidad</option>{% for unidad in unidades %}<option value="{{ unidad.id_unidad }}">{{ unidad.nombre }}</option>{% endfor %}</select></div>
+                <div class="col-sm-3"><label for="medida">Medida</label><input class="form-control" id="medida" type="text" step="any" min="0" value="0"></div>
+                <div class="col-sm-3"><label for="descripcion">descripcion</label><input class="form-control" id="descripcion" type="text"></div>
+            </div>
+            <div class="row" style="margin-top: 10px;">
+                <div class="col-sm-3"><label for="descuento_detalle">Descuento</label><input class="form-control" id="descuento_detalle" type="number" step="any" min="0" value="0"></div>
+                <div class="col-sm-3"><label for="subtotal">Subtotal</label><input class="form-control" id="subtotal" type="number" step="any" min="0" value="0"></div>
+                <div class="col-sm-3"><label for="isv">ISV</label><input class="form-control" id="isv" type="number" step="any" min="0" value="0"></div>
+                <div class="col-sm-3"><label for="total_linea">Total línea</label><input class="form-control" id="total_linea" type="number" step="any" min="0" value="0"></div>
+            </div>
+            <div class="row" style="margin-top: 10px;">
+                <div class="col-sm-3"><label for="aplica_isv">ISV 15%</label><select class="form-control" id="aplica_isv"><option value="0" selected>No</option><option value="1">Sí</option></select></div>
+            </div>
+        </div>
+        <div style="margin-top: 10px;"><button class="btn btn-primary" id="agregar-producto" type="button">Agregar</button><button class="btn btn-warning" id="quitar-producto" type="button">Quitar producto</button></div>
+        <p class="help-block" style="margin-top: 10px; margin-bottom: 2px;">Haz clic en un producto de la lista para seleccionarlo antes de quitarlo.</p>
+        <input class="form-control" id="buscar-producto-agregado" type="text" placeholder="Buscar por nombre de producto..." style="margin-bottom: 8px;">
+        <div class="form-control" id="productos-textarea" style="margin-top: 0;"></div>
+        <div id="producto-ids">
+            {% if factura is defined %}
+                {% for detalle in factura.detalles %}
+                    <div class="detalle-inicial"
+                         data-id="{{ detalle.id_producto }}"
+                         data-nombre="{{ detalle.producto.nombre }}"
+                         data-cantidad="{{ detalle.cantidad or 0 }}"
+                         data-precio-unitario="{{ detalle.precio_unitario or 0 }}"
+                         data-unidad-id="{{ detalle.id_unidad or '' }}"
+                         data-unidad-nombre="{{ detalle.unidad.nombre if detalle.unidad else '' }}"
+                         data-medida="{{ detalle.medida or 0 }}"
+                         data-descuento="{{ detalle.descuento or 0 }}"
+                         data-subtotal="{{ detalle.subtotal or 0 }}"
+                         data-isv="{{ detalle.isv or 0 }}"
+                         data-total-linea="{{ detalle.total_linea or 0 }}"
+                         data-aplica-isv="{{ '1' if detalle.aplica_isv else '0' }}"
+                         data-descripcion="{{ detalle.descripcion or '' }}"></div>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+<link href="{{ url_for('static', filename='css/quick-create.css') }}" rel="stylesheet">
+<link href="{{ url_for('static', filename='css/modal-aviso.css') }}" rel="stylesheet">
+<link href="{{ url_for('static', filename='css/visor-imagen-factura.css') }}" rel="stylesheet">
+
+<div id="visor-imagen-factura" class="visor-imagen-factura" onclick="cerrarImagenFactura(event)">
+    <span class="visor-imagen-factura-cerrar" onclick="cerrarImagenFactura(event)">&times;</span>
+    <img id="visor-imagen-factura-img" src="" alt="Imagen ampliada" draggable="false">
+</div>
+
+<script src="{{ url_for('static', filename='js/scripts.js', v='7') }}"></script>
+<script src="{{ url_for('static', filename='js/quick-create.js', v='2') }}" data-base-url="{{ url_for('facturas.index') }}quick-create/"></script>
+<script src="{{ url_for('static', filename='js/modal-aviso.js', v='1') }}"></script>
+<script src="{{ url_for('static', filename='js/ocr-factura.js', v='3') }}" data-ocr-url="{{ url_for('facturas.index') }}ocr"></script>
+<script src="{{ url_for('static', filename='js/validacion-factura.js', v='3') }}" data-validar-numero-url="{{ url_for('facturas.validar_numero_factura') }}"></script>
+<script src="{{ url_for('static', filename='js/factura-imagenes.js', v='2') }}"></script>
+<script src="{{ url_for('static', filename='js/sucursal-ubicacion.js', v='2') }}"></script>
+<script src="{{ url_for('static', filename='js/visor-imagen-factura.js', v='1') }}"></script>
