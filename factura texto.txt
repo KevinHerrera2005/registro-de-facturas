@@ -1,0 +1,9 @@
+@app.route('/')
+def index():
+    cursos=['python','javascript','c++']
+    informacion={
+        'nombre':'kevin',
+        'edad':21,
+        'cursos':cursos
+    }
+    return render_template ('index.html',data=informacion)
